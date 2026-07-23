@@ -18,6 +18,10 @@ const envSchema = z.object({
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(100),
+
+  SUPABASE_STORAGE_BUCKET_DOCUMENTOS: z.string().min(1).default('documentos'),
+  DOCUMENTO_TAMANO_MAXIMO_MB: z.coerce.number().int().positive().default(20),
+  DOCUMENTO_URL_DESCARGA_EXPIRA_SEGUNDOS: z.coerce.number().int().positive().default(300),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -41,6 +45,9 @@ if (!parsed.success) {
  *   CORS_ALLOWED_ORIGINS: string[],
  *   RATE_LIMIT_WINDOW_MS: number,
  *   RATE_LIMIT_MAX_REQUESTS: number,
+ *   SUPABASE_STORAGE_BUCKET_DOCUMENTOS: string,
+ *   DOCUMENTO_TAMANO_MAXIMO_MB: number,
+ *   DOCUMENTO_URL_DESCARGA_EXPIRA_SEGUNDOS: number,
  * }}
  */
 export const env = {

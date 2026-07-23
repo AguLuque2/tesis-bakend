@@ -1,3 +1,49 @@
+## Documento
+
+`Documento` incluye siempre `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`. Es la lista general de documentación de una obra (planos, contratos, etc.) — distinta de `etapa_archivo`, que es específico de excels por etapa. **Acá sí hay upload real**: el archivo se sube a un bucket privado de Supabase Storage (`documento_storage_bucket.sql`), nunca queda expuesto por URL pública; para descargarlo hay que pedir la URL firmada (expira en `DOCUMENTO_URL_DESCARGA_EXPIRA_SEGUNDOS`, default 300s).
+
+En Postman: el POST **no es JSON**, es `form-data`. `tipoArchivo` y `tamano` los calcula el backend a partir del archivo subido (nunca confiar en lo que mande el cliente); no se piden en el body.
+
+### GET /obras/:obraId/documentos
+- **Auth**: cualquier usuario autenticado
+- **Query**: `estado?` (`vigente`|`revision`|`obsoleto`), `page`, `pageSize`
+- **Responde**: `{ data: Documento[], meta: { total, page, pageSize } }`
+
+### POST /obras/:obraId/documentos
+- **Auth**: `admin`, `jefe_obra`
+- **Body**: `form-data` (no JSON), campos:
+  - `archivo` → tipo **File** (el binario real)
+  - `nombre` → texto, opcional (si no se manda, usa el nombre original del archivo)
+  - `categoria` → texto, opcional (ej: "plano", "contrato")
+  - `fechaSubida` → texto, opcional (`YYYY-MM-DD`, default hoy)
+- **Responde**: `{ data: Documento }` (201)
+
+### GET /documentos/:id
+- **Auth**: cualquier usuario autenticado
+- **Responde**: `{ data: Documento }` — 404 si no existe
+
+### GET /documentos/:id/descargar
+- **Auth**: cualquier usuario autenticado
+- **Responde**: `{ data: { url, expiraEnSegundos } }` — la `url` es la signed URL de Supabase Storage, para abrir/descargar directo desde el navegador o el dispositivo del usuario. 404 si el documento no existe (o no es visible para el usuario según RLS)
+
+### PATCH /documentos/:id
+- **Auth**: `admin`, `jefe_obra`
+- **Body**: JSON normal (esto no reemplaza el archivo, solo metadata)
+```json
+{
+  "nombre": "Plano eléctrico rev. B",
+  "categoria": "plano",
+  "estado": "revision"
+}
+```
+- **Responde**: `{ data: Documento }` — 404 si no existe
+
+### DELETE /documentos/:id
+- **Auth**: `admin` (jefe_obra no puede borrar — mismo criterio que `delete_solo_admin` de la base)
+- **Responde**: 204 sin body — 404 si no existe. Borra la fila y el objeto en Storage.
+
+---
+
 ## Obra
 
 `Obra` incluye siempre `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`.
@@ -78,6 +124,91 @@
 
 ### DELETE /etapas/:id
 - **Auth**: `admin` (jefe_obra no puede borrar — mismo criterio que `delete_solo_admin` de la base)
+- **Responde**: 204 sin body — 404 si no existe
+
+---
+
+## Actividad
+
+`Actividad` incluye siempre `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`. Cuelga de `etapa` (no de `obra` directo). `tipoActividadId` referencia a `tipo_actividad` (catálogo ya existente en el schema, sin módulo propio en el backend todavía — necesitás un `id` real de esa tabla para crear una actividad). `estado` arranca en `pendiente` (default de la base, no se manda en el POST) y es texto libre, sin enum ni historial de estado como `obra`/`certificacion`.
+
+### GET /etapas/:etapaId/actividades
+- **Auth**: cualquier usuario autenticado
+- **Query**: `page`, `pageSize`
+- **Responde**: `{ data: Actividad[], meta: { total, page, pageSize } }`
+
+### POST /etapas/:etapaId/actividades
+- **Auth**: `admin`, `jefe_obra`
+- **Body**:
+```json
+{
+  "tipoActividadId": "00000000-0000-0000-0000-000000000000",
+  "identificador": "P-001",
+  "fecha": "2026-08-05"
+}
+```
+- **Nota**: reemplazá `tipoActividadId` por un `id` real de `tipo_actividad` (FK obligatoria)
+- **Responde**: `{ data: Actividad }` (201)
+
+### GET /actividades/:id
+- **Auth**: cualquier usuario autenticado
+- **Responde**: `{ data: Actividad }` — 404 si no existe
+
+### PATCH /actividades/:id
+- **Auth**: `admin`, `jefe_obra`
+- **Body**: mismos campos que POST, todos opcionales, más `estado` (texto libre)
+```json
+{
+  "estado": "completada",
+  "fecha": "2026-08-06"
+}
+```
+- **Responde**: `{ data: Actividad }` — 404 si no existe
+
+### DELETE /actividades/:id
+- **Auth**: `admin` (jefe_obra no puede borrar — mismo criterio que `delete_cascada` de la base)
+- **Responde**: 204 sin body — 404 si no existe
+
+---
+
+## Archivo de etapa
+
+`EtapaArchivo` incluye siempre `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`. Cuelga de `etapa` (excel original de piquetes/estructuras, etc.). No hay upload de binarios en el backend todavía — `archivo` es una referencia (URL o path a donde esté guardado el archivo real), no el contenido. `fechaSubida` es opcional, default `current_date` en la base si no se manda.
+
+### GET /etapas/:etapaId/archivos
+- **Auth**: cualquier usuario autenticado
+- **Query**: `page`, `pageSize`
+- **Responde**: `{ data: EtapaArchivo[], meta: { total, page, pageSize } }`
+
+### POST /etapas/:etapaId/archivos
+- **Auth**: `admin`, `jefe_obra`
+- **Body**:
+```json
+{
+  "tipo": "excel_piquetes",
+  "nombreArchivo": "piquetes_tramo1.xlsx",
+  "archivo": "https://storage.ejemplo.com/obras/piquetes_tramo1.xlsx",
+  "fechaSubida": "2026-08-05"
+}
+```
+- **Responde**: `{ data: EtapaArchivo }` (201)
+
+### GET /etapa-archivos/:id
+- **Auth**: cualquier usuario autenticado
+- **Responde**: `{ data: EtapaArchivo }` — 404 si no existe
+
+### PATCH /etapa-archivos/:id
+- **Auth**: `admin`, `jefe_obra`
+- **Body**: mismos campos que POST, todos opcionales
+```json
+{
+  "nombreArchivo": "piquetes_tramo1_v2.xlsx"
+}
+```
+- **Responde**: `{ data: EtapaArchivo }` — 404 si no existe
+
+### DELETE /etapa-archivos/:id
+- **Auth**: `admin` (jefe_obra no puede borrar — mismo criterio que `delete_cascada` de la base)
 - **Responde**: 204 sin body — 404 si no existe
 
 ---

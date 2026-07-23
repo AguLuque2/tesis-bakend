@@ -22,6 +22,8 @@ export function manejarErrorPostgres(error) {
       throw new ValidationError('Hace referencia a un registro que no existe');
     case '23502': // not_null_violation
       throw new ValidationError('Falta un dato obligatorio');
+    case '23514': // check_violation
+      throw new ValidationError('El valor enviado no cumple una restricción de la base (por ejemplo, un estado inválido)');
     default:
       throw error;
   }
