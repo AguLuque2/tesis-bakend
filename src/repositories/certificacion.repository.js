@@ -105,3 +105,32 @@ export async function crearCertificacion(supabase, obraId, datos, usuarioAuthId)
   if (error) throw error;
   return mapRowToCertificacion(data);
 }
+
+/**
+ * @param {import('@supabase/supabase-js').SupabaseClient} supabase
+ * @param {string} certificacionId
+ * @param {Partial<Certificacion>} datos
+ * @param {string} usuarioAuthId
+ * @returns {Promise<Certificacion | null>}
+ */
+export async function actualizarCertificacion(supabase, certificacionId, datos, usuarioAuthId) {
+  /** @type {Record<string, any>} */
+  const cambios = { actualizado_por: usuarioAuthId };
+  if (datos.numero !== undefined) cambios.numero = datos.numero;
+  if (datos.periodoDesde !== undefined) cambios.periodo_desde = datos.periodoDesde;
+  if (datos.periodoHasta !== undefined) cambios.periodo_hasta = datos.periodoHasta;
+  if (datos.fechaEmision !== undefined) cambios.fecha_emision = datos.fechaEmision;
+  if (datos.montoBrutoCertificado !== undefined) cambios.monto_bruto_certificado = datos.montoBrutoCertificado;
+  if (datos.porcentajeAvanceMes !== undefined) cambios.porcentaje_avance_mes = datos.porcentajeAvanceMes;
+  if (datos.montoAcumulado !== undefined) cambios.monto_acumulado = datos.montoAcumulado;
+
+  const { data, error } = await supabase
+    .from('certificacion')
+    .update(cambios)
+    .eq('id', certificacionId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapRowToCertificacion(data) : null;
+}

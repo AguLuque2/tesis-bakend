@@ -33,6 +33,52 @@
 - **Auth**: `admin`, `jefe_obra`
 - **Body**: mismos campos que POST, todos opcionales
 - **Responde**: `{ data: Obra }` — 404 si no existe
+
+---
+
+## Ítem de obra
+
+`ItemObra` incluye siempre `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`. Es el catálogo de ítems licitados de una obra (de acá salen los `itemObraId` que pide `certificacion_item`).
+
+### GET /obras/:obraId/items
+- **Auth**: cualquier usuario autenticado
+- **Query**: `page`, `pageSize`
+- **Responde**: `{ data: ItemObra[], meta: { total, page, pageSize } }`
+
+### POST /obras/:obraId/items
+- **Auth**: `admin`, `jefe_obra`
+- **Body**:
+```json
+{
+  "tramo": "Tramo 1",
+  "nroItem": "1.1",
+  "descripcion": "Excavación de zanja para tendido subterráneo",
+  "unidad": "m",
+  "precioUnitario": 5000,
+  "cantidadContratada": 200
+}
+```
+- **Responde**: `{ data: ItemObra }` (201)
+
+### GET /items/:id
+- **Auth**: cualquier usuario autenticado
+- **Responde**: `{ data: ItemObra }` — 404 si no existe
+
+### PATCH /items/:id
+- **Auth**: `admin`, `jefe_obra`
+- **Body**: mismos campos que POST, todos opcionales
+```json
+{
+  "precioUnitario": 5500,
+  "cantidadContratada": 220
+}
+```
+- **Responde**: `{ data: ItemObra }` — 404 si no existe
+
+### DELETE /items/:id
+- **Auth**: `admin` (jefe_obra no puede borrar — mismo criterio que `delete_solo_admin` de la base)
+- **Responde**: 204 sin body — 404 si no existe
+
 ---
 ## Certificación
 
@@ -63,6 +109,70 @@
 ```
 - **Nota**: siempre arranca en estado `borrador`
 - **Responde**: `{ data: Certificacion }` (201)
+
+### PATCH /certificaciones/:id
+- **Auth**: `admin`, `jefe_obra`
+- **Body**: mismos campos que POST, todos opcionales — no incluye `estado` (se maneja en otro endpoint)
+```json
+{
+  "numero": "CERT-001-B",
+  "montoBrutoCertificado": 1600000,
+  "porcentajeAvanceMes": 30,
+  "montoAcumulado": 4800000
+}
+```
+- **Responde**: `{ data: Certificacion }` — 404 si no existe
+
+---
+
+## Certificación-item
+
+`CertificacionItem` incluye siempre `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`. `itemObraId` referencia a `item_obra` (tabla ya existente, sin módulo propio todavía).
+
+### GET /certificaciones/:certificacionId/items
+- **Auth**: `admin`, `jefe_obra`
+- **Query**: `page`, `pageSize`
+- **Responde**: `{ data: CertificacionItem[], meta: { total, page, pageSize } }`
+
+### POST /certificaciones/:certificacionId/items
+- **Auth**: `admin`, `jefe_obra`
+- **Body**:
+```json
+{
+  "itemObraId": "00000000-0000-0000-0000-000000000000",
+  "cantidadAnterior": 10,
+  "cantidadPresente": 5,
+  "cantidadAcumulada": 15,
+  "porcentajeAnterior": 20,
+  "porcentajePresente": 10,
+  "porcentajeAcumulado": 30,
+  "montoAnterior": 100000,
+  "montoPresente": 50000,
+  "montoAcumulado": 150000
+}
+```
+- **Nota**: reemplazá `itemObraId` por un `id` real de la tabla `item_obra` (FK obligatoria)
+- **Responde**: `{ data: CertificacionItem }` (201)
+
+### GET /certificacion-items/:id
+- **Auth**: `admin`, `jefe_obra`
+- **Responde**: `{ data: CertificacionItem }` — 404 si no existe
+
+### PATCH /certificacion-items/:id
+- **Auth**: `admin`, `jefe_obra`
+- **Body**: mismos campos que POST, todos opcionales
+```json
+{
+  "cantidadPresente": 8,
+  "porcentajePresente": 16,
+  "montoPresente": 80000
+}
+```
+- **Responde**: `{ data: CertificacionItem }` — 404 si no existe
+
+### DELETE /certificacion-items/:id
+- **Auth**: `admin` (jefe_obra no puede borrar — mismo criterio que la política `delete_cascada` de la base)
+- **Responde**: 204 sin body — 404 si no existe
 
 ---
 

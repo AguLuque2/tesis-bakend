@@ -33,3 +33,22 @@ export async function crearCertificacion(supabase, obraId, datos, usuarioAuthId)
   // el cambio a los siguientes estados del flujo se maneja en otro endpoint.
   return certificacionRepository.crearCertificacion(supabase, obraId, datos, usuarioAuthId);
 }
+
+/**
+ * @param {import('@supabase/supabase-js').SupabaseClient} supabase
+ * @param {string} certificacionId
+ * @param {Partial<import('../repositories/certificacion.repository.js').Certificacion>} datos
+ * @param {string} usuarioAuthId
+ */
+export async function actualizarCertificacion(supabase, certificacionId, datos, usuarioAuthId) {
+  const certificacionActualizada = await certificacionRepository.actualizarCertificacion(
+    supabase,
+    certificacionId,
+    datos,
+    usuarioAuthId,
+  );
+  if (!certificacionActualizada) {
+    throw new NotFoundError('No se encontró la certificación a actualizar');
+  }
+  return certificacionActualizada;
+}

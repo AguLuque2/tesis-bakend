@@ -10,6 +10,8 @@ export const crearCertificacionSchema = z.object({
   montoAcumulado: z.number().optional(),
 });
 
+export const actualizarCertificacionSchema = crearCertificacionSchema.partial();
+
 export const listarCertificacionesQuerySchema = z.object({
   estado: z.string().optional(),
   page: z.coerce.number().int().positive().default(1),

@@ -1,5 +1,9 @@
 import * as certificacionService from '../services/certificacion.service.js';
-import { crearCertificacionSchema, listarCertificacionesQuerySchema } from '../validators/certificacion.validator.js';
+import {
+  crearCertificacionSchema,
+  actualizarCertificacionSchema,
+  listarCertificacionesQuerySchema,
+} from '../validators/certificacion.validator.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { ValidationError } from '../errors/AppError.js';
 
@@ -35,4 +39,19 @@ export const crear = catchAsync(async (req, res) => {
     req.usuario.authUserId,
   );
   res.status(201).json({ data: certificacion });
+});
+
+export const actualizar = catchAsync(async (req, res) => {
+  const parsed = actualizarCertificacionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new ValidationError(parsed.error.issues.map((i) => i.message).join(', '));
+  }
+
+  const certificacion = await certificacionService.actualizarCertificacion(
+    req.supabase,
+    req.params.id,
+    parsed.data,
+    req.usuario.authUserId,
+  );
+  res.json({ data: certificacion });
 });

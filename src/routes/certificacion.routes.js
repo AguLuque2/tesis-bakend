@@ -19,3 +19,4 @@ certificacionRouter.use(requireAuth);
 certificacionRouter.use(requireRole(ROLES.ADMIN, ROLES.JEFE_OBRA));
 
 certificacionRouter.get('/:id', certificacionController.obtener);
+certificacionRouter.patch('/:id', certificacionController.actualizar);
