@@ -1,3 +1,5 @@
+import { manejarErrorPostgres } from '../utils/manejarErrorpostgres.js';
+
 /**
  * @typedef {Object} Certificacion
  * @property {string} id
@@ -102,7 +104,7 @@ export async function crearCertificacion(supabase, obraId, datos, usuarioAuthId)
     .select('*')
     .single();
 
-  if (error) throw error;
+  if (error) manejarErrorPostgres(error);
   return mapRowToCertificacion(data);
 }
 
@@ -131,6 +133,6 @@ export async function actualizarCertificacion(supabase, certificacionId, datos, 
     .select('*')
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) manejarErrorPostgres(error);
   return data ? mapRowToCertificacion(data) : null;
 }

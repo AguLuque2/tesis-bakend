@@ -36,6 +36,52 @@
 
 ---
 
+## Etapa
+
+`Etapa` incluye siempre `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`. `numero` es autoincremental por obra (lo calcula el backend con `max(numero)+1`, nunca se manda en el body) y `nombre` es único dentro de la misma obra — requiere correr `etapa_unicidad.sql` en la base (agrega `unique(obra_id, numero)` y `unique(obra_id, nombre)`; si ya tenés etapas duplicadas de antes, borrá una primero o la migración va a fallar).
+
+### GET /obras/:obraId/etapas
+- **Auth**: cualquier usuario autenticado
+- **Query**: `page`, `pageSize`
+- **Responde**: `{ data: Etapa[], meta: { total, page, pageSize } }`
+
+### POST /obras/:obraId/etapas
+- **Auth**: `admin`, `jefe_obra`
+- **Body** (sin `numero`, se asigna solo):
+```json
+{
+  "nombre": "Fundaciones",
+  "empresaEjecutora": "AMPER S.A.",
+  "fechaInicioPlanificada": "2026-08-01",
+  "fechaFinPlanificada": "2026-09-15",
+  "porcentajeAvance": 0,
+  "presupuestoAsignado": 2500000,
+  "gastoReal": 0
+}
+```
+- **Responde**: `{ data: Etapa }` (201) — 409 si ya existe una etapa con ese `nombre` en la obra
+
+### GET /etapas/:id
+- **Auth**: cualquier usuario autenticado
+- **Responde**: `{ data: Etapa }` — 404 si no existe
+
+### PATCH /etapas/:id
+- **Auth**: `admin`, `jefe_obra`
+- **Body**: mismos campos que POST, todos opcionales
+```json
+{
+  "porcentajeAvance": 35,
+  "gastoReal": 900000
+}
+```
+- **Responde**: `{ data: Etapa }` — 404 si no existe — 409 si el `nombre` nuevo choca con otra etapa de la misma obra
+
+### DELETE /etapas/:id
+- **Auth**: `admin` (jefe_obra no puede borrar — mismo criterio que `delete_solo_admin` de la base)
+- **Responde**: 204 sin body — 404 si no existe
+
+---
+
 ## Ítem de obra
 
 `ItemObra` incluye siempre `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`. Es el catálogo de ítems licitados de una obra (de acá salen los `itemObraId` que pide `certificacion_item`).

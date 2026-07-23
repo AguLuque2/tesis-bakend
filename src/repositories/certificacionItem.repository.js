@@ -1,3 +1,5 @@
+import { manejarErrorPostgres } from '../utils/manejarErrorpostgres.js';
+
 /**
  * @typedef {Object} CertificacionItem
  * @property {string} id
@@ -108,7 +110,7 @@ export async function crearCertificacionItem(supabase, certificacionId, datos, u
     .select('*')
     .single();
 
-  if (error) throw error;
+  if (error) manejarErrorPostgres(error);
   return mapRowToCertificacionItem(data);
 }
 
@@ -140,7 +142,7 @@ export async function actualizarCertificacionItem(supabase, certificacionItemId,
     .select('*')
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) manejarErrorPostgres(error);
   return data ? mapRowToCertificacionItem(data) : null;
 }
 

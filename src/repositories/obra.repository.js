@@ -1,3 +1,5 @@
+import { manejarErrorPostgres } from '../utils/manejarErrorpostgres.js';
+
 /**
  * @typedef {Object} Obra
  * @property {string} id
@@ -98,7 +100,7 @@ export async function crearObra(supabase, datos, usuarioAuthId) {
     .select('*')
     .single();
 
-  if (error) throw error;
+  if (error) manejarErrorPostgres(error);
   return mapRowToObra(data);
 }
 
@@ -124,6 +126,6 @@ export async function actualizarObra(supabase, obraId, datos, usuarioAuthId) {
 
   const { data, error } = await supabase.from('obra').update(cambios).eq('id', obraId).select('*').maybeSingle();
 
-  if (error) throw error;
+  if (error) manejarErrorPostgres(error);
   return data ? mapRowToObra(data) : null;
 }
