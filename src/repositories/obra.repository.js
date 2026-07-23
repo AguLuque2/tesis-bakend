@@ -11,6 +11,10 @@
  * @property {string} fechaFinPlanificada
  * @property {string} responsable
  * @property {string} descripcion
+ * @property {string} creadoEn
+ * @property {string | null} creadoPor
+ * @property {string} actualizadoEn
+ * @property {string | null} actualizadoPor
  */
 
 /**
@@ -30,6 +34,10 @@ function mapRowToObra(row) {
     fechaFinPlanificada: row.fecha_fin_planificada,
     responsable: row.responsable,
     descripcion: row.descripcion,
+    creadoEn: row.creado_en,
+    creadoPor: row.creado_por,
+    actualizadoEn: row.actualizado_en,
+    actualizadoPor: row.actualizado_por,
   };
 }
 

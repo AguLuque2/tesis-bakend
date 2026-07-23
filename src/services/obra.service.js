@@ -23,7 +23,7 @@ export async function obtenerObra(supabase, obraId) {
 
 /**
  * @param {import('@supabase/supabase-js').SupabaseClient} supabase
- * @param {import('../repositories/obra.repository.js').Obra} datos
+ * @param {Partial<import('../repositories/obra.repository.js').Obra>} datos
  * @param {string} usuarioAuthId
  */
 export async function crearObra(supabase, datos, usuarioAuthId) {

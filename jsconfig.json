@@ -1,15 +1,12 @@
 {
   "compilerOptions": {
     "module": "ESNext",
+    "moduleResolution": "Bundler",
     "target": "ES2022",
     "checkJs": true,
     "strict": true,
-    "moduleResolution": "Node",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "skipLibCheck": true
   },
-  "include": ["src/**/*.js"],
+  "include": ["src/**/*.js", "src/**/*.d.ts"],
   "exclude": ["node_modules"]
 }
