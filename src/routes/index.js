@@ -1,16 +1,20 @@
 import { Router } from 'express';
-import { obraRouter } from './obra.routes.js';
-import { certificacionRouter, certificacionPorObraRouter } from './certificacion.routes.js';
-import { historialEstadoPorObraRouter, historialEstadoPorCertificacionRouter } from './historialEstado.routes.js';
+import { obraRouter } from '../modules/Obra/routes/obra.routes.js';
+import { itemObraRouter, itemObraPorObraRouter } from '../modules/Obra/routes/itemObra.routes.js';
+import { etapaRouter, etapaPorObraRouter } from '../modules/Obra/routes/etapa.routes.js';
+import { actividadRouter, actividadPorEtapaRouter } from '../modules/Obra/routes/actividad.routes.js';
+import { etapaArchivoRouter, etapaArchivoPorEtapaRouter } from '../modules/Obra/routes/etapaArchivo.routes.js';
+import { documentoRouter, documentoPorObraRouter } from '../modules/Obra/routes/documento.routes.js';
+import { historialEstadoPorObraRouter } from '../modules/Obra/routes/historialEstadoObra.routes.js';
+import {
+  certificacionRouter,
+  certificacionPorObraRouter,
+} from '../modules/Certificacion/routes/certificacion.routes.js';
 import {
   certificacionItemRouter,
   certificacionItemPorCertificacionRouter,
-} from './certificacionItem.routes.js';
-import { itemObraRouter, itemObraPorObraRouter } from './itemObra.routes.js';
-import { etapaRouter, etapaPorObraRouter } from './etapa.routes.js';
-import { actividadRouter, actividadPorEtapaRouter } from './actividad.routes.js';
-import { etapaArchivoRouter, etapaArchivoPorEtapaRouter } from './etapaArchivo.routes.js';
-import { documentoRouter, documentoPorObraRouter } from './documento.routes.js';
+} from '../modules/Certificacion/routes/certificacionItem.routes.js';
+import { historialEstadoPorCertificacionRouter } from '../modules/Certificacion/routes/historialEstadoCertificacion.routes.js';
 
 export const router = Router();
 
@@ -34,6 +38,6 @@ router.use('/documentos', documentoRouter);
 router.use('/certificaciones', certificacionRouter);
 router.use('/certificacion-items', certificacionItemRouter);
 
-// A medida que se arman los demás módulos (personal, vehiculos,
-// materiales, etc.), se importan y montan acá siguiendo el mismo
-// patrón que obra.routes.js / certificacion.routes.js.
+// A medida que se arman los demás módulos (MaterialesYCompra, Vehiculos,
+// Usuarios), se importan y montan acá siguiendo el mismo patrón que
+// src/modules/Obra y src/modules/Certificacion.

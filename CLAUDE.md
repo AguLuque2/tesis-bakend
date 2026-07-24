@@ -6,43 +6,59 @@ Backend de un sistema de gestión de obras para AMPER (empresa de obras eléctri
 - **Base de datos**: PostgreSQL vía **Supabase**, con Row Level Security (RLS) activo en las 33 tablas.
 - **Autenticación**: Supabase Auth con Google OAuth.
 - El esquema de base de datos (33 tablas + políticas de RLS) ya está creado y versionado en `supabase/migrations/`. **Es la fuente de verdad — no lo modifiques sin discutirlo antes.** Si una tarea requiere cambiar el esquema, decilo antes de escribir código, no lo hagas en silencio.
-- Ya existe un módulo completo de ejemplo: **`src/*/obra.*`** (routes, controller, service, repository, validator). Es la plantilla a seguir para todo módulo nuevo — mirala antes de escribir el siguiente módulo.
+- Ya existe una entidad completa de ejemplo: **`src/modules/Obra/*/obra.*`** (routes, controller, service, repository, validator). Es la plantilla a seguir para toda entidad nueva — mirala antes de escribir la siguiente.
 
 ## Convención de nombres — TODO en español
 
 Esto incluye nombres de archivo, variables, funciones, y comentarios de código. No es opcional.
 
-- **Archivos**: `<entidad>.<capa>.js`, con la entidad en **español** y la capa en **inglés** (tal como ya está el módulo de Obra, es la convención a seguir siempre):
+- **Archivos**: `<entidad>.<capa>.js`, con la entidad en **español** y la capa en **inglés** (tal como ya está `obra.*` dentro de `modules/Obra/`, es la convención a seguir siempre):
   - `obra.controller.js`, `obra.service.js`, `obra.repository.js`, `obra.routes.js`, `obra.validator.js`
-  - Mismo patrón para cualquier módulo nuevo: `certificacion.service.js`, `empleado.repository.js`, `vehiculo.controller.js`, etc. — nunca traducir "controller/service/repository/routes/validator", son los nombres de capa estándar del proyecto.
+  - Mismo patrón para cualquier entidad nueva, dentro del módulo de dominio que le corresponda: `certificacion.service.js` (en `modules/Certificacion/`), `empleado.repository.js` (en `modules/Usuarios/`), `vehiculo.controller.js` (en `modules/Vehiculos/`), etc. — nunca traducir "controller/service/repository/routes/validator", son los nombres de capa estándar del proyecto.
 - **Variables y funciones**: en español, describiendo qué hacen, no cómo.
   - Bien: `obtenerObraPorId`, `listarCertificacionesPorObra`, `empleadoActual`
   - Mal: `getData`, `fetchStuff`, `handleThing2`
 - **Excepciones aceptadas** (términos técnicos sin traducción natural, quedan en inglés): nombres de librerías y su API (`req`, `res`, `next`, `middleware`), palabras reservadas del lenguaje, y los nombres de columnas/tablas de la base (que están en español pero en snake_case, ver abajo).
 
-## Arquitectura en capas — no negociable
+## Arquitectura: módulos de dominio, con capas adentro de cada uno — no negociable
+
+El proyecto se organiza primero por **módulo de dominio** (los "padres" del negocio), y recién adentro de cada módulo se separa por capa. Los módulos de dominio actuales son **Obra**, **Certificacion** — y a medida que se arman, **MaterialesYCompra**, **Vehiculos**, **Usuarios**. El nombre de carpeta de cada módulo va en **PascalCase**.
 
 ```
 src/
-├── config/         # env validado + clientes de Supabase
-├── constants/       # roles y otras constantes de negocio, centralizadas
-├── errors/            # clases de error propias (AppError y derivadas)
-├── middlewares/          # auth (JWT + rol), manejo de errores
-├── routes/                 # define endpoints, delega a controllers
-├── controllers/              # valida input, llama al service, arma response
-├── services/                   # lógica de negocio pura, sin conocer HTTP
-├── repositories/                 # única capa que habla con Supabase
-├── validators/                     # schemas de zod por endpoint
-└── utils/
+├── config/               # compartido: env validado + clientes de Supabase
+├── constants/             # compartido: roles y otras constantes de negocio
+├── errors/                  # compartido: clases de error propias (AppError y derivadas)
+├── middlewares/               # compartido: auth (JWT + rol), manejo de errores, upload
+├── utils/                       # compartido: helpers (manejarErrorPostgres, catchAsync, etc.)
+├── routes/
+│   └── index.js                  # único punto de montaje: importa los routers de cada módulo
+└── modules/
+    ├── Obra/
+    │   ├── controllers/              # obra, etapa, actividad, etapaArchivo, itemObra, documento,
+    │   ├── services/                 # historialEstadoObra — todo lo que cuelga de una obra,
+    │   ├── repositories/             # salvo certificación (tiene su propio módulo)
+    │   ├── validators/
+    │   └── routes/
+    └── Certificacion/
+        ├── controllers/              # certificacion, certificacionItem,
+        ├── services/                 # historialEstadoCertificacion
+        ├── repositories/
+        ├── validators/
+        └── routes/
 ```
 
-Los nombres de **carpeta** (`config`, `routes`, `controllers`, `services`, `repositories`, etc.) quedan en inglés, tal cual ya está el proyecto — no se traducen. Lo que va en español es el nombre de la **entidad** dentro de cada archivo (`obra`, `certificacion`, `empleado`, etc.) y todo el contenido: variables, funciones, comentarios.
+- Las carpetas **compartidas** (`config`, `constants`, `errors`, `middlewares`, `utils`) quedan fuera de `modules/` porque las usa toda la app — no son de un dominio en particular. Esto incluye `middlewares/auth.js` y `repositories/usuario.repository.js` (éste último es la única excepción de repository que vive afuera de un módulo, porque lo usa `requireAuth` en cada request, no es exclusivo de un futuro módulo `Usuarios`).
+- Adentro de cada módulo, los nombres de **carpeta de capa** (`controllers`, `services`, `repositories`, `validators`, `routes`) quedan en inglés y en minúscula, igual que antes. Lo que va en español es el nombre de la **entidad** dentro de cada archivo (`obra.controller.js`, `etapa.service.js`, etc.) y todo el contenido.
+- Un archivo dentro de un módulo importa a otra capa del **mismo módulo** con rutas relativas cortas (`../services/etapa.service.js`), y a las carpetas compartidas con `../../../` (ej: `../../../errors/AppError.js`), porque los módulos están un nivel más adentro que antes.
+- **Una entidad que abarca dos módulos a la vez se parte en dos, una por módulo — nunca queda una entidad "cruzada" entre módulos.** Es lo que se hizo con `historialEstado`: se partió en `historialEstadoObra.*` (adentro de `modules/Obra/`) e `historialEstadoCertificacion.*` (adentro de `modules/Certificacion/`), cada una con su propio controller/service/repository/validator/routes independiente, aunque el código sea casi idéntico entre las dos.
+- `src/routes/index.js` es el **único** punto de montaje de Express: importa los routers de cada módulo y arma los paths (`/obras`, `/obras/:obraId/etapas`, etc.). Ningún módulo se automonta.
 
 Los datos fluyen siempre `routes → controllers → services → repositories → Supabase`, nunca al revés ni salteando capas.
 - Un controller **nunca** importa un repository directo.
 - Un service **nunca** conoce `req`/`res`.
 - snake_case en la base de datos, camelCase en el código — la capa `repository` es la única que traduce entre los dos mundos (ver `obra.repository.js` como ejemplo del mapeo).
-- **El mapeo de cada repository siempre incluye `creado_en`, `creado_por`, `actualizado_en` y `actualizado_por`** en el objeto que devuelve (como `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`), para que la API los exponga en cada respuesta. El molde original de `obra.repository.js` no los incluye — es un error a corregir ahí también, no un patrón a repetir en los módulos nuevos.
+- **El mapeo de cada repository siempre incluye `creado_en`, `creado_por`, `actualizado_en` y `actualizado_por`** en el objeto que devuelve (como `creadoEn`, `creadoPor`, `actualizadoEn`, `actualizadoPor`), para que la API los exponga en cada respuesta.
 
 ## Reglas obligatorias
 
